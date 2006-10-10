@@ -18,9 +18,9 @@ HcalTopology::HcalTopology() :
   lastHFRing_(41),
   firstHORing_(1),
   lastHORing_(15),
-  firstHEDoublePhiRing_(21),
+  firstHEDoublePhiRing_(22),
   firstHFQuadPhiRing_(40),
-  firstHETripleDepthRing_(27),
+  firstHETripleDepthRing_(24),
   singlePhiBins_(72),
   doublePhiBins_(36)
 {
@@ -194,12 +194,15 @@ int HcalTopology::exclude(HcalSubdetector subdet, int ieta1, int ieta2, int iphi
       if (subdet==HcalBarrel) {
 	if (aieta>16 || depth>2 || (aieta<=14 && depth>1)) ok=false;	    
       } else if (subdet==HcalEndcap) {
-	if (aieta<16 || aieta>29 ||
-	    (aieta==16 && depth!=3) ||
-	    (aieta==17 && depth!=1) ||
-	    (((aieta>=18 && aieta<=26) || aieta==29) && depth>2) ||
-	    ((aieta==27 || aieta==28) && depth>3) ||
-	    (aieta>=21 && (iphi%2)==0)) ok=false;
+	if (aieta<16 || aieta>29 || 
+	    depth>3 ||
+	    (aieta>=22 && aieta!=28 && (iphi%2)==0)) ok=false;
+
+// 	    (aieta==16 && depth!=3) ||
+// 	    (aieta==17 && depth>2) ||
+// 	    (((aieta>=18 && aieta<=23) || aieta==29) && depth>2) ||
+// 	    ((aieta==24 || aieta==25) && depth>3) ||
+// 	    (aieta>=22 && (iphi%2)==0)) ok=false;
       } else if (subdet==HcalOuter) {
 	if (aieta>15 || iphi>IPHI_MAX || depth!=4) ok=false;
       } else if (subdet==HcalForward) {
@@ -319,8 +322,6 @@ int HcalTopology::exclude(HcalSubdetector subdet, int ieta1, int ieta2, int iphi
       n=2;
       neighbors[0]=HcalDetId(id.subdet(),(aieta-1)*id.zside(),id.iphi(),id.depth());
       neighbors[1]=HcalDetId(id.subdet(),(aieta-1)*id.zside(),id.iphi()+2,id.depth());
-    } else if (aieta==1) {
-      neighbors[0]=HcalDetId(id.subdet(),-aieta*id.zside(),id.iphi(),id.depth());
     } else
       neighbors[0]=HcalDetId(id.subdet(),(aieta-1)*id.zside(),id.iphi(),id.depth());
     
@@ -352,7 +353,7 @@ void HcalTopology::depthBinInformation(HcalSubdetector subdet, int etaRing,
       nDepthBins = 1;
       startingBin = 3;
     } else if (etaRing==17) {
-      nDepthBins = 1;
+      nDepthBins = 2;
       startingBin = 1;
     } else if (etaRing==lastHERing()) {
       nDepthBins = 2;
