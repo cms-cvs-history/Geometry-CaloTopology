@@ -17,8 +17,8 @@
    cells which would normally exist in the full CMS HCAL, but are not
    present for the specified topology.
     
-   $Date: 2007/05/11 14:12:24 $
-   $Revision: 1.8 $
+   $Date: 2011/01/21 22:57:03 $
+   $Revision: 1.8.2.1 $
    \author J. Mans - Minnesota
 */
 class HcalTopology : public CaloSubdetectorTopology {
@@ -27,6 +27,7 @@ public:
   enum Mode { md_LHC=0, md_H2=1, md_SLHC=2 };
   HcalTopology(Mode mode=md_LHC);
 	
+  Mode mode() const {return mode_;}
   /** Add a cell to exclusion list */
   void exclude(const HcalDetId& id);
   /** Exclude an entire subdetector */
