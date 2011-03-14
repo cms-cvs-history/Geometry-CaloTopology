@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cassert>
 #include <algorithm>
+#include "FWCore/Utilities/interface/Exception.h"
 
 static const int IPHI_MAX=72;
 
@@ -475,5 +476,29 @@ int HcalTopology::nPhiBins(int etaRing) const {
   return lastPhiBin;
 }
 
+void HcalTopology::getDepthSegmentation(unsigned ring, std::vector<int> & readoutDepths) const
+{
+  // if it doesn't exist, return the first entry with a lower index.  So if we only
+  // have entries for 1 and 17, any input from 1-16 should return the entry for ring 1
+  SegmentationMap::const_iterator pos = depthSegmentation_.upper_bound(ring);
+  if(pos == depthSegmentation_.end()) {
+    throw cms::Exception("HcalTopology") << "No depth segmentation found for ring" << ring;
+  }
+  --pos;
+    // pos now refers to the last element with key <= ring.
+  readoutDepths = pos->second;
+}
 
+void HcalTopology::setDepthSegmentation(unsigned ring, const std::vector<int> & readoutDepths)
+{
+  depthSegmentation_[ring] = readoutDepths;
+}
+
+std::pair<int, int> HcalTopology::segmentBoundaries(unsigned ring, unsigned depth) const {
+  std::vector<int> readoutDepths;
+  getDepthSegmentation(ring, readoutDepths);
+  int d1 = std::lower_bound(readoutDepths.begin(), readoutDepths.end(), depth) - readoutDepths.begin();
+  int d2 = std::upper_bound(readoutDepths.begin(), readoutDepths.end(), depth) - readoutDepths.begin();
+  return std::pair<int, int>(d1, d2);
+}
 
