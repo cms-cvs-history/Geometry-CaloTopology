@@ -481,7 +481,7 @@ void HcalTopology::getDepthSegmentation(unsigned ring, std::vector<int> & readou
   // if it doesn't exist, return the first entry with a lower index.  So if we only
   // have entries for 1 and 17, any input from 1-16 should return the entry for ring 1
   SegmentationMap::const_iterator pos = depthSegmentation_.upper_bound(ring);
-  if(pos == depthSegmentation_.end()) {
+  if(pos == depthSegmentation_.begin()) {
     throw cms::Exception("HcalTopology") << "No depth segmentation found for ring" << ring;
   }
   --pos;
