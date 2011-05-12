@@ -21,9 +21,9 @@ HcalTopology::HcalTopology(HcalTopology::Mode mode) :
   lastHFRing_(41),
   firstHORing_(1),
   lastHORing_(15),
-  firstHEDoublePhiRing_((mode)?(22):(21)),
+  firstHEDoublePhiRing_((mode==md_H2)?(22):(21)),
   firstHFQuadPhiRing_(40),
-  firstHETripleDepthRing_((mode)?(24):(27)),
+  firstHETripleDepthRing_((mode==md_H2)?(24):(27)),
   singlePhiBins_(72),
   doublePhiBins_(36)
 {
