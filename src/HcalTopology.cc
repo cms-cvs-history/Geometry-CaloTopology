@@ -354,14 +354,14 @@ void HcalTopology::depthBinInformation(HcalSubdetector subdet, int etaRing,
                                        int & nDepthBins, int & startingBin) const {
 	if (mode_==md_SLHC) {
 		if(subdet == HcalBarrel) {
-			nDepthBins = 4;
+			nDepthBins = 7;
 			startingBin = 1;
 		} else if(subdet == HcalEndcap) {
 			if (etaRing==16) {
-				nDepthBins = 2;
+				nDepthBins = 5;
 				startingBin = 3;
 			} else {
-				nDepthBins = 4;
+				nDepthBins = 7;
 				startingBin = 1;
 			}
 		}
