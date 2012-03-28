@@ -193,34 +193,34 @@ bool HcalTopology::validRaw(const HcalDetId& id) const {
 
   if ((ieta==0 || iphi<=0 || iphi>IPHI_MAX) || aieta>41) return false; // outer limits
     
-    if (ok) {
-		HcalSubdetector subdet=id.subdet();
-		if (subdet==HcalBarrel) {
-	  if (mode_==md_SLHC && (aieta>16 || depth>7)) ok=false;
-	  if (mode_==md_LHC && (aieta>16 || depth>2 || (aieta<=14 && depth>1))) ok=false;	    
-		} else if (subdet==HcalEndcap) {
-	  if (mode_==md_SLHC) {
-				if (depth>7 || aieta<16 || aieta>29 ||
-					(aieta==16 && depth<3) ||
-					(aieta>=firstHEDoublePhiRing_ && (iphi%2)==0)) ok=false;
-			} else {
-				if (depth>3 || aieta<16 || aieta>29 ||
-					(aieta==16 && depth!=3) ||
-					(aieta==17 && depth!=1 && mode_!=md_H2) || // special case at H2
-					(((aieta>=17 && aieta<firstHETripleDepthRing_) || aieta==29) && depth>2) ||
-					(aieta>=firstHEDoublePhiRing_ && (iphi%2)==0)) ok=false;
-			}
-		} else if (subdet==HcalOuter) {
-			if (aieta>15 || iphi>IPHI_MAX || depth!=4) ok=false;
-		} else if (subdet==HcalForward) {
-			if (aieta<29 || aieta>41 ||
-				((iphi%2)==0) ||
-				(depth>2) ||
-				(aieta>=40 && ((iphi+1)%4)!=0)) ok=false;
-		} else ok=false;
-    }
+  if (ok) {
+    HcalSubdetector subdet=id.subdet();
+    if (subdet==HcalBarrel) {
+      if (mode_==md_SLHC && (aieta>16 || depth>HcalDetId::maxDepthHB || (aieta==16 && depth > 2))) ok=false;
+      if (mode_==md_LHC && (aieta>16 || depth>2 || (aieta<=14 && depth>1))) ok=false;	    
+    } else if (subdet==HcalEndcap) {
+      if (mode_==md_SLHC) {
+	if (depth>HcalDetId::maxDepthHE || aieta<16 || aieta>29 ||
+	    (aieta==16 && depth<3) ||
+	    (aieta>=firstHEDoublePhiRing_ && (iphi%2)==0)) ok=false;
+      } else {
+	if (depth>3 || aieta<16 || aieta>29 ||
+	    (aieta==16 && depth!=3) ||
+	    (aieta==17 && depth!=1 && mode_!=md_H2) || // special case at H2
+	    (((aieta>=17 && aieta<firstHETripleDepthRing_) || aieta==29) && depth>2) ||
+	    (aieta>=firstHEDoublePhiRing_ && (iphi%2)==0)) ok=false;
+      }
+    } else if (subdet==HcalOuter) {
+      if (aieta>15 || iphi>IPHI_MAX || depth!=4) ok=false;
+    } else if (subdet==HcalForward) {
+      if (aieta<29 || aieta>41 ||
+	  ((iphi%2)==0) ||
+	  (depth>2) ||
+	  (aieta>=40 && ((iphi+1)%4)!=0)) ok=false;
+    } else ok=false;
+  }
     
-    return ok;
+  return ok;
 }
 
   
@@ -352,67 +352,63 @@ int HcalTopology::decAIEta(const HcalDetId& id, HcalDetId neighbors[2]) const {
 
 void HcalTopology::depthBinInformation(HcalSubdetector subdet, int etaRing,
                                        int & nDepthBins, int & startingBin) const {
-	if (mode_==md_SLHC) {
-		if(subdet == HcalBarrel) {
-			nDepthBins = 7;
-			startingBin = 1;
-		} else if(subdet == HcalEndcap) {
-			if (etaRing==16) {
-				nDepthBins = 5;
-				startingBin = 3;
-			} else {
-				nDepthBins = 7;
-				startingBin = 1;
-			}
-		}
-		else if(subdet == HcalForward) {
-			nDepthBins = 2;
-			startingBin = 1;
-		}    
-		else if(subdet == HcalOuter) {
-			nDepthBins = 1;
-			startingBin = 4;
-		} 
-	} else {
+  if (mode_==md_SLHC) {
+    if(subdet == HcalBarrel) {
+      startingBin = 1;
+      if (etaRing==16) {
+	nDepthBins = 2;
+      } else {
+	nDepthBins = HcalDetId::maxDepthHB;
+      }
+    } else if(subdet == HcalEndcap) {
+      if (etaRing==16) {
+	nDepthBins = 5;
+	startingBin = 3;
+      } else {
+	nDepthBins = HcalDetId::maxDepthHE;
+	startingBin = 1;
+      }
+    } else if(subdet == HcalForward) {
+      nDepthBins = 2;
+      startingBin = 1;
+    } else if(subdet == HcalOuter) {
+      nDepthBins = 1;
+      startingBin = 4;
+    } 
+  } else {
 		
-		if(subdet == HcalBarrel) {
-			if (etaRing<=14) {
-				nDepthBins = 1;
-				startingBin = 1;
-			} else {
-				nDepthBins = 2;
-				startingBin = 1;
-			}
-		} else if(subdet == HcalEndcap) {
-			if (etaRing==16) {
-				nDepthBins = 1;
-				startingBin = 3;
-			} else if (etaRing==17) {
-				nDepthBins = 1;
-				startingBin = 1;
-			} else if (etaRing==lastHERing()) {
-				nDepthBins = 2;
-				startingBin = 1;
-			}
-			else {
-				nDepthBins = (etaRing >= firstHETripleDepthRing_) ? 3 : 2;
-				startingBin = 1;
-			}
-		}
-		
-		else if(subdet == HcalForward) {
-			nDepthBins = 2;
-			startingBin = 1;
-		}
-		
-		else if(subdet == HcalOuter) {
-			nDepthBins = 1;
-			startingBin = 4;
-		}
-		else {
-			std::cerr << "Bad HCAL subdetector " << subdet << std::endl;
-		}
-	}
+    if(subdet == HcalBarrel) {
+      if (etaRing<=14) {
+	nDepthBins = 1;
+	startingBin = 1;
+      } else {
+	nDepthBins = 2;
+	startingBin = 1;
+      }
+    } else if(subdet == HcalEndcap) {
+      if (etaRing==16) {
+	nDepthBins = 1;
+	startingBin = 3;
+      } else if (etaRing==17) {
+	nDepthBins = 1;
+	startingBin = 1;
+      } else if (etaRing==lastHERing()) {
+	nDepthBins = 2;
+	startingBin = 1;
+      } else {
+	nDepthBins = (etaRing >= firstHETripleDepthRing_) ? 3 : 2;
+	startingBin = 1;
+      }
+    } else if(subdet == HcalForward) {
+      nDepthBins = 2;
+      startingBin = 1;
+    } else if(subdet == HcalOuter) {
+      nDepthBins = 1;
+      startingBin = 4;
+    } else {
+      std::cerr << "Bad HCAL subdetector " << subdet << std::endl;
+    }
+  }
 	
 }
 
