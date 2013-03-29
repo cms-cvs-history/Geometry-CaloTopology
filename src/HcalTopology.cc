@@ -18,9 +18,9 @@ HcalTopology::HcalTopology(HcalTopology::Mode mode) :
   excludeHF_(false),
   mode_(mode),
   firstHBRing_(1),
-  lastHBRing_(16),
+  lastHBRing_(16), 
   firstHERing_(16),
-  lastHERing_(29),
+  lastHERing_(29), 
   firstHFRing_(29),
   lastHFRing_(41),
   firstHORing_(1),
@@ -206,8 +206,11 @@ bool HcalTopology::validRaw(const HcalDetId& id) const {
 	if (aieta>lastHBRing() || depth>2 || (aieta<=14 && depth>1)) ok=false;
       }
     } else if (subdet==HcalEndcap) {
-      if (mode_==md_SLHC || mode_==md_H2HE) {
+      if (mode_==md_H2HE) {
 	if (depth>HcalDetId::maxDepthHE || aieta<firstHERing() || aieta>lastHERing() || (aieta==firstHERing() && depth<3) || (aieta>=firstHEDoublePhiRing() && (iphi%2)==0)) ok=false;
+      } else if (mode_==md_SLHC) {
+        if (depth>getMaxLayersDepth(aieta) || aieta<firstHERing() || aieta>lastHERing() ||
+           (aieta>=firstHEDoublePhiRing() && (iphi%2)==0)) ok=false;
       } else {
 	if (depth>3 || aieta<firstHERing() || aieta>lastHERing() || (aieta==firstHERing() && depth!=3) || (aieta==17 && depth!=1 && mode_!=md_H2) || // special case at H2
 	    (((aieta>=17 && aieta<firstHETripleDepthRing()) || aieta==lastHERing()) && depth>2) ||
@@ -379,7 +382,11 @@ void HcalTopology::depthBinInformation(HcalSubdetector subdet, int etaRing,
       }
     }
   } else if(subdet == HcalEndcap) {
-    if (mode_==md_SLHC || mode_==md_H2HE) {
+    if (mode_==md_SLHC) {
+      nDepthBins  = getMaxLayersDepth(etaRing);
+      startingBin = 1;
+      if (etaRing==firstHERing()) startingBin = 3;
+    } else if (mode_==md_H2HE) {
       if (etaRing==firstHERing()) {
 	nDepthBins  = HcalDetId::maxDepthHE - 2;
 	startingBin = 3;
@@ -439,7 +446,7 @@ bool HcalTopology::incrementDepth(HcalDetId & detId) const
       subdet = HcalForward;
       (ieta > 0) ? ++ieta : --ieta;
       depth = 1;
-    } else if(subdet == HcalEndcap && etaRing ==  lastHERing()) {
+    } else if(subdet == HcalEndcap && etaRing == lastHERing() && mode_ != md_SLHC) {
       // split cells go to bigger granularity.  Ring 29 -> 28
       (ieta > 0) ? --ieta : ++ieta;
     } else {
@@ -488,4 +495,83 @@ std::pair<int, int> HcalTopology::segmentBoundaries(unsigned ring, unsigned dept
   int d2 = std::upper_bound(readoutDepths.begin(), readoutDepths.end(), depth) - readoutDepths.begin();
   return std::pair<int, int>(d1, d2);
 }
+
+int HcalTopology::getMaxLayersDepth(unsigned ring) const
+{
+ return maxLayersDepth[ring-16];
+}
+
+void HcalTopology::setMaxLayersDepth()
+{
+  float slhcDepths[5]       = {400.458, 418.768, 436.168, 493., 549.268};
+  float ring16slhcDepths[3] = {418.768, 450., 470.968};
+  float ring17slhcDepths[5] = {409.698, 435., 460., 495., 514.468};
+  float ring18slhcDepths[5] = {391.883, 439., 467., 504. , 540.568};
+  float layerDepths[19] = {400.458, 408.718, 416.978, 425.248, 433.508, 441.768,
+                           450.038, 458.298, 466.558, 474.828, 483.088, 491.348,
+                           499.618, 507.878, 516.138, 524.398, 532.668, 540.928,
+                           549.268};
+  float ringZstart[14]  = {418.768, 409.698, 391.883, 400.458, 400.458, 400.458,
+                           400.458, 400.458, 400.458, 400.458, 400.458, 400.458,
+                           400.458, 400.458};
+  float ringZend  [14]  = {470.968, 514.468, 540.568, 549.268, 549.268, 549.268,
+                           549.268, 549.268, 549.268, 549.268, 549.268, 549.268,
+                           549.268, 549.268};
+  int   layerShift [3]  = {2, 1, -1};
+
+// loop over HE iring
+//-------------------
+  for( int iring=16; iring<=29; ++iring ) {
+    if(mode_!=md_SLHC && iring <=29) { 
+      int maxDepth = HcalDetId::maxDepthHE;
+      maxLayersDepth.push_back(maxDepth);
+      continue;
+    } 
+
+    std::vector<float> depths;
+    std::vector<int> readoutDepths;
+    getDepthSegmentation(iring, readoutDepths);
+
+    if( readoutDepths.size() > 0 ) {
+
+      int depth = readoutDepths[0];
+      depths.push_back(ringZstart[iring-16]);   
+      int layer = 1;
+      float lastDepth = depths[0];
+      for( unsigned int i=1; i<readoutDepths.size(); ++i ) {
+        layer = i;
+        if( iring <= 18) layer += layerShift[iring-16];
+        if( layerDepths[layer] > ringZend[iring-16]) 
+        {
+          depths.push_back(ringZend[iring-16]);
+          break;
+        }
+
+        if( depth != readoutDepths[i] ) 
+        {
+          depth = readoutDepths[i];
+          if( (iring == 16 && depth > (HcalDetId::maxDepthHE)-2) ||
+                              depth > (HcalDetId::maxDepthHE) ) break;
+          if( layerDepths[layer] > lastDepth ) 
+          {
+            depths.push_back(layerDepths[layer]);
+            lastDepth = layerDepths[layer];
+          }
+        }
+      }
+      if (depths.back() < ringZend[iring-16]) depths.push_back(ringZend[iring-16]);  
+
+    } else {
+        if (iring == 16)      for (int i=0; i<3; ++i) depths.push_back(ring16slhcDepths[i]);
+        else if (iring == 17) for (int i=0; i<5; ++i) depths.push_back(ring17slhcDepths[i]);
+        else if (iring == 18) for (int i=0; i<5; ++i) depths.push_back(ring18slhcDepths[i]);
+        else                  for (int i=0; i<5; ++i) depths.push_back(slhcDepths[i]);
+    }
+
+    int idepth = depths.size()-1; 
+    maxLayersDepth.push_back(idepth);
+  }
+
+}    
+
 
